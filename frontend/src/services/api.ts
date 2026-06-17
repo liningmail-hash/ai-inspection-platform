@@ -573,3 +573,144 @@ export type {
   VideoChannel,
   VideoSession
 }
+
+// ========== v2 Device Management Types ==========
+
+export type CommandResult = { id: string; status: string; message: string; time?: string; data?: Record<string, unknown> }
+
+export type DeviceNode = {
+  id: string
+  name: string
+  deviceType: 'NVR' | 'CHANNEL' | 'DRONE' | 'VEHICLE'
+  status: string
+  parentId: string | null
+  children: DeviceNode[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type NvrDevice = DeviceNode & {
+  gbDeviceId: string
+  gbPassword: string
+  sipHost: string
+  sipPort: number
+  protocol: string
+  vendor: string
+  location: string
+  edgeNodeId: string
+  channelCount: number
+  channels: ChannelNode[]
+}
+
+export type ChannelNode = DeviceNode & {
+  channelNo: number
+  channelName: string
+  ptzType: string
+  streamUrl: string
+  playUrl: string
+  resolution: string
+  aiEnabled: boolean
+  latitude: number
+  longitude: number
+}
+
+export type DroneDockNode = DeviceNode & {
+  dockId: string
+  vendor: string
+  protocol: string
+  endpoint: string
+  batteryPercent: number
+  weather: string
+  edgeNodeId: string
+  latitude: number
+  longitude: number
+  location: string
+  droneCount: number
+  drones: DeviceNode[]
+}
+
+export type VehicleNode = DeviceNode & {
+  plateNo: string
+  vehicleType: string
+  vendor: string
+  protocol: string
+  endpoint: string
+  speedKph: number
+  latitude: number
+  longitude: number
+  edgeNodeId: string
+  channelCount: number
+  channels: ChannelNode[]
+}
+
+// ========== v2 API Functions ==========
+
+export async function loadNvrs(): Promise<NvrDevice[]> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/nvrs`)
+  if (!resp.ok) throw new Error('Failed to load NVRs')
+  return resp.json()
+}
+
+export async function createNvr(payload: Record<string, unknown>): Promise<NvrDevice> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/nvrs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!resp.ok) throw new Error('Failed to create NVR')
+  return resp.json()
+}
+
+export async function updateNvr(id: string, payload: Record<string, unknown>): Promise<NvrDevice> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/nvrs/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!resp.ok) throw new Error('Failed to update NVR')
+  return resp.json()
+}
+
+export async function deleteNvr(id: string): Promise<CommandResult> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/nvrs/${id}`, { method: 'DELETE' })
+  if (!resp.ok) throw new Error('Failed to delete NVR')
+  return resp.json()
+}
+
+export async function syncNvrChannels(nvrId: string): Promise<CommandResult> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/nvrs/${nvrId}/sync`, { method: 'POST' })
+  if (!resp.ok) throw new Error('Failed to sync NVR channels')
+  return resp.json()
+}
+
+export async function loadDroneDocks(): Promise<DroneDockNode[]> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/drones`)
+  if (!resp.ok) throw new Error('Failed to load drones')
+  return resp.json()
+}
+
+export async function createDroneDock(payload: Record<string, unknown>): Promise<DroneDockNode> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/drones`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!resp.ok) throw new Error('Failed to create drone dock')
+  return resp.json()
+}
+
+export async function loadVehiclesV2(): Promise<VehicleNode[]> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/vehicles`)
+  if (!resp.ok) throw new Error('Failed to load vehicles')
+  return resp.json()
+}
+
+export async function createVehicle(payload: Record<string, unknown>): Promise<VehicleNode> {
+  const resp = await fetch(`${API_BASE_URL}/api/devices/vehicles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!resp.ok) throw new Error('Failed to create vehicle')
+  return resp.json()
+}
