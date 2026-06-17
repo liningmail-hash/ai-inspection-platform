@@ -1,6 +1,11 @@
 package com.aiplatform.inspection.repository;
 
 import com.aiplatform.inspection.domain.Device;
+import com.aiplatform.inspection.domain.DeviceNode;
+import com.aiplatform.inspection.domain.NvrDevice;
+import com.aiplatform.inspection.domain.ChannelNode;
+import com.aiplatform.inspection.domain.DroneDockNode;
+import com.aiplatform.inspection.domain.VehicleNode;
 import com.aiplatform.inspection.domain.VideoChannel;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -100,6 +105,28 @@ public class PostgresDeviceManagementRepository implements DeviceManagementRepos
         }
         return channels;
     }
+
+    // ========== v2 stubs (not yet implemented for Postgres) ==========
+
+    @Override public List<DeviceNode> deviceTree() { return List.of(); }
+    @Override public Optional<DeviceNode> deviceNodeById(String id) { return Optional.empty(); }
+    @Override public List<DeviceNode> deviceNodesByType(String dt) { return List.of(); }
+    @Override public List<NvrDevice> nvrDevices() { return List.of(); }
+    @Override public Optional<NvrDevice> nvrDeviceById(String id) { return Optional.empty(); }
+    @Override public NvrDevice createNvrDevice(NvrDevice nvr) { return nvr; }
+    @Override public Optional<NvrDevice> updateNvrDevice(String id, NvrDevice nvr) { return Optional.empty(); }
+    @Override public boolean deleteNvrDevice(String id) { return false; }
+    @Override public List<ChannelNode> syncNvrChannels(String nvrId, List<ChannelNode> channels) { return channels; }
+    @Override public List<DroneDockNode> droneDocks() { return List.of(); }
+    @Override public Optional<DroneDockNode> droneDockById(String id) { return Optional.empty(); }
+    @Override public DroneDockNode createDroneDock(DroneDockNode dock) { return dock; }
+    @Override public Optional<DroneDockNode> updateDroneDock(String id, DroneDockNode dock) { return Optional.empty(); }
+    @Override public boolean deleteDroneDock(String id) { return false; }
+    @Override public List<VehicleNode> vehicles() { return List.of(); }
+    @Override public Optional<VehicleNode> vehicleById(String id) { return Optional.empty(); }
+    @Override public VehicleNode createVehicle(VehicleNode vehicle) { return vehicle; }
+    @Override public Optional<VehicleNode> updateVehicle(String id, VehicleNode vehicle) { return Optional.empty(); }
+    @Override public boolean deleteVehicle(String id) { return false; }
 
     private Device toDevice(ResultSet rs) throws SQLException {
         return new Device(

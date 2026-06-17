@@ -78,6 +78,73 @@ public class PlatformController {
         return deviceManagementService.syncChannels(id);
     }
 
+    // ========== v2 Device Management (Hierarchical) ==========
+
+    @GetMapping("/devices/tree")
+    public List<DeviceNode> deviceTree() {
+        return deviceManagementService.devicesTree();
+    }
+
+    @GetMapping("/devices/nvrs")
+    public List<NvrDevice> nvrs() {
+        return deviceManagementService.nvrDevices();
+    }
+
+    @PostMapping("/devices/nvrs")
+    public NvrDevice createNvr(@RequestBody(required = false) Map<String, Object> payload) {
+        return deviceManagementService.createNvr(payload == null ? Map.of() : payload);
+    }
+
+    @GetMapping("/devices/nvrs/{id}")
+    public NvrDevice nvrById(@PathVariable String id) {
+        return deviceManagementService.nvrDeviceById(id);
+    }
+
+    @PutMapping("/devices/nvrs/{id}")
+    public NvrDevice updateNvr(@PathVariable String id, @RequestBody(required = false) Map<String, Object> payload) {
+        return deviceManagementService.updateNvr(id, payload == null ? Map.of() : payload);
+    }
+
+    @DeleteMapping("/devices/nvrs/{id}")
+    public CommandResult deleteNvr(@PathVariable String id) {
+        return deviceManagementService.deleteNvr(id);
+    }
+
+    @PostMapping("/devices/nvrs/{id}/sync")
+    public CommandResult syncNvrChannelsV2(@PathVariable String id) {
+        return deviceManagementService.syncNvrChannels(id);
+    }
+
+    @GetMapping("/devices/drones")
+    public List<DroneDockNode> droneDocksV2() {
+        return deviceManagementService.droneDocks();
+    }
+
+    @PostMapping("/devices/drones")
+    public DroneDockNode createDroneDock(@RequestBody(required = false) Map<String, Object> payload) {
+        return deviceManagementService.createDroneDock(payload == null ? Map.of() : payload);
+    }
+
+    @GetMapping("/devices/vehicles")
+    public List<VehicleNode> vehiclesV2() {
+        return deviceManagementService.vehicles();
+    }
+
+    @PostMapping("/devices/vehicles")
+    public VehicleNode createVehicle(@RequestBody(required = false) Map<String, Object> payload) {
+        return deviceManagementService.createVehicle(payload == null ? Map.of() : payload);
+    }
+
+    // Fix missing GET /api/devices/{id} for legacy compatibility
+    @GetMapping("/devices/{id}")
+    public Device getDeviceById(@PathVariable String id) {
+        return deviceManagementService.devices().stream()
+            .filter(d -> d.id().equals(id))
+            .findFirst()
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.NOT_FOUND, "Device not found: " + id));
+    }
+
     @GetMapping("/inspection-plans")
     public List<InspectionPlan> plans() {
         return queryService.plans();

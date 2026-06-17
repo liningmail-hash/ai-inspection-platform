@@ -6,6 +6,11 @@ import com.aiplatform.inspection.adapter.VehicleVideoAdapter;
 import com.aiplatform.inspection.adapter.VendorSdkAdapterRegistry;
 import com.aiplatform.inspection.domain.CommandResult;
 import com.aiplatform.inspection.domain.Device;
+import com.aiplatform.inspection.domain.DeviceNode;
+import com.aiplatform.inspection.domain.NvrDevice;
+import com.aiplatform.inspection.domain.ChannelNode;
+import com.aiplatform.inspection.domain.DroneDockNode;
+import com.aiplatform.inspection.domain.VehicleNode;
 import com.aiplatform.inspection.domain.IntegrationConfig;
 import com.aiplatform.inspection.domain.VideoChannel;
 import com.aiplatform.inspection.repository.DeviceManagementRepository;
@@ -215,5 +220,95 @@ public class DeviceManagementService {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    // ========== v2 Device Management ==========
+
+    public List<DeviceNode> devicesTree() {
+        return deviceRepository.deviceTree();
+    }
+
+    public List<NvrDevice> nvrDevices() {
+        return deviceRepository.nvrDevices();
+    }
+
+    public NvrDevice nvrDeviceById(String id) {
+        return deviceRepository.nvrDeviceById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NVR not found: " + id));
+    }
+
+    public NvrDevice createNvr(Map<String, Object> payload) {
+        NvrDevice nvr = new NvrDevice();
+        nvr.setName(required(payload, "name"));
+        nvr.setGbDeviceId(value(payload, "gbDeviceId", ""));
+        nvr.setGbPassword(value(payload, "gbPassword", ""));
+        nvr.setSipHost(value(payload, "sipHost", ""));
+        nvr.setSipPort(Integer.parseInt(value(payload, "sipPort", "5060")));
+        nvr.setVendor(value(payload, "vendor", ""));
+        nvr.setLocation(value(payload, "location", ""));
+        nvr.setEdgeNodeId(value(payload, "edgeNodeId", "EDGE-01"));
+        NvrDevice created = deviceRepository.createNvrDevice(nvr);
+        inspectionRepository.appendAuditLog("system", "NVR_CREATE", "nvr", created.getId(), "success");
+        return created;
+    }
+
+    public NvrDevice updateNvr(String id, Map<String, Object> payload) {
+        NvrDevice current = deviceRepository.nvrDeviceById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NVR not found: " + id));
+        if (payload.containsKey("name")) current.setName(value(payload, "name", ""));
+        if (payload.containsKey("gbDeviceId")) current.setGbDeviceId(value(payload, "gbDeviceId", ""));
+        if (payload.containsKey("gbPassword")) current.setGbPassword(value(payload, "gbPassword", ""));
+        if (payload.containsKey("sipHost")) current.setSipHost(value(payload, "sipHost", ""));
+        if (payload.containsKey("sipPort")) current.setSipPort(Integer.parseInt(value(payload, "sipPort", "5060")));
+        if (payload.containsKey("vendor")) current.setVendor(value(payload, "vendor", ""));
+        if (payload.containsKey("location")) current.setLocation(value(payload, "location", ""));
+        return deviceRepository.updateNvrDevice(id, current)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update NVR"));
+    }
+
+    public CommandResult deleteNvr(String id) {
+        boolean deleted = deviceRepository.deleteNvrDevice(id);
+        if (!deleted) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "NVR not found: " + id);
+        inspectionRepository.appendAuditLog("system", "NVR_DELETE", "nvr", id, "success");
+        return new CommandResult(id, "deleted", "NVR deleted", Instant.now(), Map.of("id", id));
+    }
+
+    public CommandResult syncNvrChannels(String nvrId) {
+        NvrDevice nvr = deviceRepository.nvrDeviceById(nvrId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NVR not found: " + nvrId));
+        List<ChannelNode> channels = deviceRepository.syncNvrChannels(nvrId, List.of());
+        inspectionRepository.appendAuditLog("system", "NVR_SYNC_CHANNELS", "nvr", nvrId,
+            channels.isEmpty() ? "no_channels" : "success");
+        return new CommandResult(nvrId, "synced", "NVR channels synced", Instant.now(),
+            Map.of("channelCount", channels.size()));
+    }
+
+    public List<DroneDockNode> droneDocks() {
+        return deviceRepository.droneDocks();
+    }
+
+    public DroneDockNode createDroneDock(Map<String, Object> payload) {
+        DroneDockNode dock = new DroneDockNode();
+        dock.setName(required(payload, "name"));
+        dock.setDockId(value(payload, "dockId", ""));
+        dock.setVendor(value(payload, "vendor", "DJI_DOCK"));
+        dock.setEndpoint(value(payload, "endpoint", ""));
+        dock.setEdgeNodeId(value(payload, "edgeNodeId", "EDGE-01"));
+        return deviceRepository.createDroneDock(dock);
+    }
+
+    public List<VehicleNode> vehicles() {
+        return deviceRepository.vehicles();
+    }
+
+    public VehicleNode createVehicle(Map<String, Object> payload) {
+        VehicleNode vehicle = new VehicleNode();
+        vehicle.setName(required(payload, "name"));
+        vehicle.setPlateNo(value(payload, "plateNo", ""));
+        vehicle.setVehicleType(value(payload, "vehicleType", ""));
+        vehicle.setVendor(value(payload, "vendor", "JT1078"));
+        vehicle.setEndpoint(value(payload, "endpoint", ""));
+        vehicle.setEdgeNodeId(value(payload, "edgeNodeId", "EDGE-01"));
+        return deviceRepository.createVehicle(vehicle);
     }
 }
