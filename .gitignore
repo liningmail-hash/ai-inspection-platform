@@ -1,0 +1,35 @@
+﻿# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.log
+frontend/*.tsbuildinfo
+*.tsbuildinfo
+
+# Java
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# runtime
+logs/
+/data/
+.env
+
+# local design exports
+设计文件/
+
+# build archives
+*.tar.gz

@@ -1,0 +1,47 @@
+services:
+  postgres:
+    ports: !override
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    ports: !override
+      - "127.0.0.1:6379:6379"
+
+  mqtt:
+    ports: !override
+      - "127.0.0.1:1883:1883"
+      - "127.0.0.1:18083:18083"
+
+  video-service:
+    ports: !override
+      - "127.0.0.1:1935:1935"
+      - "127.0.0.1:1985:1985"
+      - "127.0.0.1:8088:8080"
+      - "127.0.0.1:8000:8000/udp"
+
+  minio:
+    ports: !override
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deploy/Dockerfile.backend-cloud
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: ../deploy/Dockerfile.python-service-cloud
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8100"]
+
+  edge-simulator:
+    build:
+      context: ../edge-simulator
+      dockerfile: ../deploy/Dockerfile.python-service-cloud
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8200"]
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../deploy/Dockerfile.frontend-cloud

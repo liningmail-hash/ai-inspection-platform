@@ -1,0 +1,130 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ai_inspection}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_inspection}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_inspection}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  mqtt:
+    image: emqx/emqx:5.8.6
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USERNAME: ${EMQX_DASHBOARD_USER:-admin}
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:-change-me-emqx}
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    volumes:
+      - emqx-data:/opt/emqx/data
+
+  video-service:
+    image: ossrs/srs:5
+    ports:
+      - "1935:1935"
+      - "1985:1985"
+      - "8088:8080"
+      - "8000:8000/udp"
+    volumes:
+      - srs-data:/usr/local/srs/objs
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change-me-minio}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-change-me-minio};
+      mc mb -p local/evidence local/recordings local/models local/datasets local/reports;
+      exit 0;
+      "
+
+  backend:
+    build: ../backend
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ai_inspection}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ai_inspection}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      AI_SERVICE_URL: http://ai-service:8100
+      EDGE_SIMULATOR_URL: http://edge-simulator:8200
+      MQTT_BROKER_URL: tcp://mqtt:1883
+      VIDEO_SERVICE_URL: http://video-service:8080
+      JWT_SECRET: ${JWT_SECRET:-local-demo-secret-change-me}
+      PLATFORM_CAMERA_VENDOR: ${PLATFORM_CAMERA_VENDOR:-MOCK_VENDOR}
+      PLATFORM_DRONE_VENDOR: ${PLATFORM_DRONE_VENDOR:-MOCK_VENDOR}
+      PLATFORM_VEHICLE_VENDOR: ${PLATFORM_VEHICLE_VENDOR:-MOCK_VENDOR}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mqtt:
+        condition: service_started
+      video-service:
+        condition: service_started
+
+  ai-service:
+    build: ../ai-service
+    environment:
+      MODEL_STORAGE_URL: http://minio:9000/models
+    ports:
+      - "${AI_SERVICE_PORT:-8100}:8100"
+
+  edge-simulator:
+    build: ../edge-simulator
+    environment:
+      AI_SERVICE_URL: http://ai-service:8100
+      MQTT_BROKER_URL: tcp://mqtt:1883
+      VIDEO_SERVICE_URL: http://video-service:8080
+    ports:
+      - "${EDGE_SIMULATOR_PORT:-8200}:8200"
+
+  frontend:
+    build: ../frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-8080}
+      VITE_AI_SERVICE_URL: http://localhost:${AI_SERVICE_PORT:-8100}
+      VITE_EDGE_SERVICE_URL: http://localhost:${EDGE_SIMULATOR_PORT:-8200}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
+  redis-data:
+  emqx-data:
+  srs-data:
+  minio-data:

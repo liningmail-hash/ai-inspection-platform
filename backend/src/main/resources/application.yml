@@ -1,0 +1,31 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+spring:
+  application:
+    name: ai-inspection-backend
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+springdoc:
+  swagger-ui:
+    path: /docs
+platform:
+  ai-service-url: ${AI_SERVICE_URL:http://localhost:8100}
+  edge-simulator-url: ${EDGE_SIMULATOR_URL:http://localhost:8200}
+  auth:
+    jwt-secret: ${JWT_SECRET:local-demo-secret-change-me}
+  sdk:
+    camera-vendor: ${PLATFORM_CAMERA_VENDOR:MOCK_VENDOR}
+    drone-vendor: ${PLATFORM_DRONE_VENDOR:MOCK_VENDOR}
+    vehicle-vendor: ${PLATFORM_VEHICLE_VENDOR:MOCK_VENDOR}
+    hikvision:
+      endpoint: ${HIKVISION_ENDPOINT:}
+      username: ${HIKVISION_USERNAME:}
+      credential-ref: ${HIKVISION_CREDENTIAL_REF:}
+      sdk-library-path: ${HIKVISION_SDK_LIBRARY_PATH:}
+      stream-mode: ${HIKVISION_STREAM_MODE:rtsp}
+      callback-base-url: ${HIKVISION_CALLBACK_BASE_URL:}

@@ -1,0 +1,22 @@
+{
+  "name": "ai-inspection-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "preview:static": "node preview-server.mjs"
+  },
+  "dependencies": {
+    "@lucide/vue": "latest",
+    "@vitejs/plugin-vue": "latest",
+    "vue": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vite": "latest",
+    "vue-tsc": "latest"
+  }
+}
